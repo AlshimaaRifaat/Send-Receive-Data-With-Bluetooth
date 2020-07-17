@@ -18,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.communicationdevices.R;
 
@@ -25,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener{
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener,BluetoothConnectionService.Conniction{
     private static final String TAG = "MainActivity";
 
     BluetoothAdapter mBluetoothAdapter;
@@ -183,6 +184,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         Button btnONOFF = (Button) findViewById(R.id.btnONOFF);
         btnEnableDisable_Discoverable = (Button) findViewById(R.id.btnDiscoverable_on_off);
         lvNewDevices = (ListView) findViewById(R.id.lvNewDevices);
@@ -196,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver4, filter);
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
 
         lvNewDevices.setOnItemClickListener(MainActivity.this);
 
@@ -317,7 +319,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
 
-        
+
 
 
 
@@ -354,7 +356,41 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             mBTDevices.get(i).createBond();
 
             mBTDevice = mBTDevices.get(i);
-            mBluetoothConnection = new BluetoothConnectionService(MainActivity.this);
+
+                mBluetoothConnection = new BluetoothConnectionService(MainActivity.this,this);
+
         }
+    }
+
+    @Override
+    public void getMSG(final String MSG) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(MainActivity.this,MSG ,Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    public void closeConniction(final String error) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(MainActivity.this,error ,Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    public void connect() {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(MainActivity.this,"you are connected now :) " , Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    public void notableTOConnect(String Msg) {
+
     }
 }

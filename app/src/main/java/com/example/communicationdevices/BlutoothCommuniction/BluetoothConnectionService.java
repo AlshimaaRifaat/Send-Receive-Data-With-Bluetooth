@@ -3,10 +3,13 @@ package com.example.communicationdevices.BlutoothCommuniction;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +18,14 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class BluetoothConnectionService {
+    public interface Conniction{
+        void getMSG(String MSG);
+        void closeConniction (String error);
+        void connect();
+        void notableTOConnect (String Msg );
+
+    }
+    Conniction conniction;
     private static final String TAG = "BluetoothConnectionServ";
 
     private static final String appName = "MYAPP";
@@ -34,9 +45,20 @@ public class BluetoothConnectionService {
 
     private ConnectedThread mConnectedThread;
 
-    public BluetoothConnectionService(Context context) {
+    public BluetoothConnectionService(Context context,Conniction conniction) /*throws Exception*/ {
         mContext = context;
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        this.conniction=conniction;
+       // mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        //final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+
+
+       /* if (bluetoothManager == null) throw new Exception("bluetooth Manager is null ");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            mBluetoothAdapter = bluetoothManager.getAdapter();
+        } else {*/
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        //}
+
         start();
     }
 
@@ -81,6 +103,7 @@ public class BluetoothConnectionService {
                 Log.d(TAG, "run: RFCOM server socket accepted connection.");
 
             }catch (IOException e){
+               // conniction.closeConniction(e.getMessage());
                 Log.e(TAG, "AcceptThread: IOException: " + e.getMessage() );
             }
 
@@ -142,7 +165,7 @@ public class BluetoothConnectionService {
                 // This is a blocking call and will only return on a
                 // successful connection or an exception
                 mmSocket.connect();
-
+                conniction.connect();
                 Log.d(TAG, "run: ConnectThread connected.");
             } catch (IOException e) {
                 // Close the socket
@@ -152,6 +175,7 @@ public class BluetoothConnectionService {
                 } catch (IOException e1) {
                     Log.e(TAG, "mConnectThread: run: Unable to close connection in socket " + e1.getMessage());
                 }
+               // conniction.notableTOConnect(e.getMessage());
                 Log.d(TAG, "run: ConnectThread: Could not connect to UUID: " + MY_UUID_INSECURE );
             }
 
@@ -249,11 +273,16 @@ public class BluetoothConnectionService {
             while (true) {
                 // Read from the InputStream
                 try {
+
                     bytes = mmInStream.read(buffer);
                     String incomingMessage = new String(buffer, 0, bytes);
+                    conniction.getMSG(incomingMessage);
+
+                    Toast.makeText(mContext,"incoming "+ incomingMessage.toString(), Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "InputStream: " + incomingMessage);
                 } catch (IOException e) {
                     Log.e(TAG, "write: Error reading Input Stream. " + e.getMessage() );
+                   // conniction.closeConniction(e.getMessage());
                     break;
                 }
             }
@@ -262,18 +291,22 @@ public class BluetoothConnectionService {
         //Call this from the main activity to send data to the remote device
         public void write(byte[] bytes) {
             String text = new String(bytes, Charset.defaultCharset());
+            Toast.makeText(mContext, "write "+text.toString(), Toast.LENGTH_LONG).show();
             Log.d(TAG, "write: Writing to outputstream: " + text);
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) {
                 Log.e(TAG, "write: Error writing to output stream. " + e.getMessage() );
+               // conniction.closeConniction(e.getMessage());
             }
         }
 
         /* Call this from the main activity to shutdown the connection */
         public void cancel() {
             try {
+              //  conniction.closeConniction("cancel");
                 mmSocket.close();
+
             } catch (IOException e) { }
         }
     }
