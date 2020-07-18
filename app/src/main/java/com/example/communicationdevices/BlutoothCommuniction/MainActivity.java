@@ -2,6 +2,7 @@ package com.example.communicationdevices.BlutoothCommuniction;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -18,6 +19,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.communicationdevices.R;
@@ -26,7 +28,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener,BluetoothConnectionService.Conniction{
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
     private static final String TAG = "MainActivity";
 
     BluetoothAdapter mBluetoothAdapter;
@@ -38,7 +40,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     Button btnSend;
 
     EditText etSend;
-
+TextView incomingMessage;
+StringBuilder messages;
     private static final UUID MY_UUID_INSECURE =
             UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
 
@@ -194,6 +197,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         btnSend = (Button) findViewById(R.id.btnSend);
         etSend = (EditText) findViewById(R.id.editText);
 
+        incomingMessage=(TextView)findViewById(R.id.incomingMessage);
+        messages=new StringBuilder();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver,new IntentFilter("incomingMessage"));
         //Broadcasts when bond state changes (ie:pairing)
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver4, filter);
@@ -223,11 +229,20 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             public void onClick(View view) {
                 byte[] bytes = etSend.getText().toString().getBytes(Charset.defaultCharset());
                 mBluetoothConnection.write(bytes);
+                etSend.setText("");
             }
         });
 
     }
 
+    BroadcastReceiver mReceiver=new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+           String text=intent.getStringExtra("theMessage");
+           messages.append(text+"\n");
+           incomingMessage.setText(messages);
+        }
+    };
     //create method for starting connection
 //***remember the conncction will fail and app will crash if you haven't paired first
     public void startConnection(){
@@ -357,40 +372,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             mBTDevice = mBTDevices.get(i);
 
-                mBluetoothConnection = new BluetoothConnectionService(MainActivity.this,this);
+                mBluetoothConnection = new BluetoothConnectionService(MainActivity.this);
 
         }
     }
 
-    @Override
-    public void getMSG(final String MSG) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                Toast.makeText(MainActivity.this,MSG ,Toast.LENGTH_LONG).show();
-            }
-        });
-    }
 
-    @Override
-    public void closeConniction(final String error) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                Toast.makeText(MainActivity.this,error ,Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    @Override
-    public void connect() {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                Toast.makeText(MainActivity.this,"you are connected now :) " , Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    @Override
-    public void notableTOConnect(String Msg) {
-
-    }
 }

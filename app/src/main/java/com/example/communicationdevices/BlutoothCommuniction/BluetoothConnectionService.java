@@ -7,9 +7,12 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,14 +21,8 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class BluetoothConnectionService {
-    public interface Conniction{
-        void getMSG(String MSG);
-        void closeConniction (String error);
-        void connect();
-        void notableTOConnect (String Msg );
 
-    }
-    Conniction conniction;
+
     private static final String TAG = "BluetoothConnectionServ";
 
     private static final String appName = "MYAPP";
@@ -45,9 +42,9 @@ public class BluetoothConnectionService {
 
     private ConnectedThread mConnectedThread;
 
-    public BluetoothConnectionService(Context context,Conniction conniction) /*throws Exception*/ {
+    public BluetoothConnectionService(Context context) /*throws Exception*/ {
         mContext = context;
-        this.conniction=conniction;
+
        // mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         //final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
@@ -165,7 +162,7 @@ public class BluetoothConnectionService {
                 // This is a blocking call and will only return on a
                 // successful connection or an exception
                 mmSocket.connect();
-                conniction.connect();
+
                 Log.d(TAG, "run: ConnectThread connected.");
             } catch (IOException e) {
                 // Close the socket
@@ -276,9 +273,11 @@ public class BluetoothConnectionService {
 
                     bytes = mmInStream.read(buffer);
                     String incomingMessage = new String(buffer, 0, bytes);
-                    conniction.getMSG(incomingMessage);
+                    Intent incomingMessageIntent=new Intent("incomingMessage");
+                    incomingMessageIntent.putExtra("theMessage",incomingMessage);
+                    LocalBroadcastManager.getInstance(mContext).sendBroadcast(incomingMessageIntent);
 
-                    Toast.makeText(mContext,"incoming "+ incomingMessage.toString(), Toast.LENGTH_SHORT).show();
+
                     Log.d(TAG, "InputStream: " + incomingMessage);
                 } catch (IOException e) {
                     Log.e(TAG, "write: Error reading Input Stream. " + e.getMessage() );
@@ -291,7 +290,7 @@ public class BluetoothConnectionService {
         //Call this from the main activity to send data to the remote device
         public void write(byte[] bytes) {
             String text = new String(bytes, Charset.defaultCharset());
-            Toast.makeText(mContext, "write "+text.toString(), Toast.LENGTH_LONG).show();
+
             Log.d(TAG, "write: Writing to outputstream: " + text);
             try {
                 mmOutStream.write(bytes);
